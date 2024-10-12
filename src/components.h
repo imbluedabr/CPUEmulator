@@ -9,6 +9,7 @@ template <typename T> class DynamicArray {
     public:
     T* array;
     size_t size;
+    T* lastElement;
     DynamicArray(size_t size);
     T& operator[](size_t index);
     ~DynamicArray();
