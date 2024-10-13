@@ -68,14 +68,14 @@ template <typename T, typename ADR> void RamMemory<T, ADR>::dump(ADR start, ADR 
     }
 }
 
-//read byte from ram
-template <typename T, typename ADR> T RamMemory<T, ADR>::read(ADR adres, unsigned char n) {
-    unsigned char* datapointer = ((unsigned char*) &this->ram[adres << 1]) + (adres & 0b1);//add the pointer to the cacheline to the byteselect to calculate the final adres
-    if (cacheline + n > this->ram.lastElement) {
+//read bytes from ram
+template <typename T, typename ADR> unsigned char* RamMemory<T, ADR>::read(ADR adres, unsigned char n) {
+    char byteSelect = adres & 0b1;
+    unsigned char* datapointer = (unsigned char*) &this->ram[adres >> 1]);//add the pointer to the cacheline to the byteselect to calculate the final adres
+    if (&datapointer[byteSelect] + n > this->ram.lastElement) {
         return 0; //if the last byte that we read is above the last element we got to return
     }
-    
-    memcpy(, datapointer, n);
+    return &datapointer[byteSelect];
 }
 
 template <typename T, typename ADR> void RamMemory<T, ADR>::write(ADR adres, T value, unsigned char n) {

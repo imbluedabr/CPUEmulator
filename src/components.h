@@ -39,7 +39,7 @@ template <typename T, typename ADR> class RamMemory : public Component {
     //dump a certain chunk of ram into the console
     void dump(ADR start, ADR end);
     //read a word from ram
-    T read(ADR adres, unsigned char n);
+    unsigned char* read(ADR adres, unsigned char n);
     //write a word to ram
     void write(ADR adres, T value, unsigned char n);
 };

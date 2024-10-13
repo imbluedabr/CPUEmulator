@@ -12,6 +12,24 @@ class CPU {
     static constexpr Word register_count = 12;
     //core cpu data
     Word registers[register_count]; //a, b, c, d, e, f, usp, ssp, pc, sr
+    enum regs {
+        REG_A,
+        REG_B,
+        REG_C,
+        REG_D,
+        REG_E,
+        REG_F,
+        REG_PC,
+        REG_SR,
+        REG_SSP,
+        REG_USP
+    };
+    enum flags {
+        FLAG_ZERO,
+        FLAG_NEG,
+        FLAG_CARRY,
+        FLAG_USERMODE
+    };
     Word IOBus[256];
 
     //core devices

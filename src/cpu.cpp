@@ -7,31 +7,40 @@ CPU::CPU() : memory(this, 1024),
              serialIO(this),
              flash(this, 1024)
 {
-    //idk
+    this->reset();
 }
 
 inline void CPU::setBit(Byte index) {
-    
+    this->registers[REG_SR] |= (index << 1);
 }
 
 inline bool CPU::getBit(Byte index) {
-    
+    return this->registers[REG_SR] & (index << 1);
 }
 
 inline void CPU::clearBit(Byte index) {
-    
+    this->registers[REG_SR] &= ~(index << 1);
 }
 
 inline Word CPU::getReg(Byte reg) {
-    
+    if (getBit(FLAG_USERMODE) && reg > REG_SR) {
+        return this->registers[reg+1];
+    }
+    return this->registers[reg];
 }
 
 inline void CPU::setReg(Byte reg, Word value) {
-    
+    if (getBit(FLAG_USERMODE) && reg > REG_SR) {
+        this->registers[reg+1] = value;
+    } else {
+        this->registers[reg] = value;
+    }
 }
 
 inline Word CPU::parseFlags(Word value) {
-    
+    if (value == 0) {
+        //set zero flag
+    }
 }
 
 inline void CPU::interupt(Byte intv) {
@@ -59,4 +68,5 @@ void CPU::reset() {
     for (int i = 0; i < register_count; i++) {//reset the registers
         this->registers[i] = 0;
     }
+    this->userMode = false;
 }
