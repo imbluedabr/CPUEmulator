@@ -21,14 +21,15 @@ class CPU {
         REG_F,
         REG_PC,
         REG_SR,
-        REG_SSP,
+        REG_KSP,
         REG_USP
     };
     enum flags {
         FLAG_ZERO,
         FLAG_NEG,
         FLAG_CARRY,
-        FLAG_USERMODE
+        FLAG_USERMODE,
+        FLAG_INTERUPT
     };
     Word IOBus[256];
 

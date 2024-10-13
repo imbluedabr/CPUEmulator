@@ -30,6 +30,9 @@ inline Word CPU::getReg(Byte reg) {
 }
 
 inline void CPU::setReg(Byte reg, Word value) {
+    if (getBit(FLAG_INTERUPT)) {
+        return;
+    }
     if (getBit(FLAG_USERMODE) && reg > REG_SR) {
         this->registers[reg+1] = value;
     } else {
@@ -40,11 +43,21 @@ inline void CPU::setReg(Byte reg, Word value) {
 inline Word CPU::parseFlags(Word value) {
     if (value == 0) {
         //set zero flag
+        setBit(FLAG_ZERO);
+    } else if ((int)value < 0) {
+        //set negative flag
+        setBit(FLAG_NEG);
+    } else if (value == 0xFFFF) {
+        setBit(FLAG_CARRY);
     }
+    return value;
 }
 
 inline void CPU::interupt(Byte intv) {
-    
+    setBit(FLAG_INTERUPT);
+    clearBit(FLAG_USERMODE);
+    push(this->regs[REG_PC], 2);//push the pc to the kernel stack pointer
+    this->regs[REG_PC] = this->memory.read(intv, 2);
 }
 
 inline Word CPU::pop(Byte n) {
