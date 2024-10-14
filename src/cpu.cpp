@@ -53,19 +53,24 @@ inline Word CPU::parseFlags(Word value) {
     return value;
 }
 
+//cause an interupt
 inline void CPU::interupt(Byte intv) {
     setBit(FLAG_INTERUPT);
     clearBit(FLAG_USERMODE);
     push(this->regs[REG_PC], 2);//push the pc to the kernel stack pointer
-    this->regs[REG_PC] = *(Word*)this->memory.read(intv, 2);
+    this->registers[REG_PC] = this->memory.read( intv*2, 2); //read the interupt vector from memory
 }
 
+//pop n bytes from the stack
 inline Word CPU::pop(Byte n) {
-    
+    this->registers[REG_SP + getBit(FLAG_USERMODE)] += n;
+    return this->memory.read(this->registers[REG_SP], n);
 }
 
+//push n bytes to the stack
 inline void CPU::push(Word value, Byte n) {
-    //this->memory.read(getReg(REG_SP)); this shit is hella broken
+    this->memory.write(this->registers[REG_SP], value, n);//write n bytes to the adres in REG_SP
+    this->registers[REG_SP + getBit(FLAG_USERMODE)] -= n;//this is a decrementing stack architecture so decrement REG_SP by n bytes
 }
 
 //main functions

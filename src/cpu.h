@@ -10,6 +10,7 @@ typedef Byte = unsigned char;
 class CPU {
     public:
     static constexpr Word register_count = 12;
+    static constexpr Word intvTable = 0x0000; //location where the interupt vector table is stored in ram
     //core cpu data
     Word registers[register_count]; //a, b, c, d, e, f, usp, ssp, pc, sr
     enum regs {
