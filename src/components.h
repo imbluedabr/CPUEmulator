@@ -10,6 +10,7 @@ template <typename T> class DynamicArray {
     T* array;
     size_t size;
     T* lastElement;
+    static T justkillmealready;
     DynamicArray(size_t size);
     T& operator[](size_t index);
     ~DynamicArray();

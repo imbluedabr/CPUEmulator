@@ -14,11 +14,10 @@ template <typename T> DynamicArray<T>::DynamicArray(size_t size) {
 }
 
 template <typename T> T& DynamicArray<T>::operator[](size_t index) {
-    static T;
     if (index < this->size) {
         return this->array[index];
     }
-    return T;
+    return justkillmealready;
 }
 
 template <typename T> DynamicArray<T>::~DynamicArray() {
@@ -73,7 +72,7 @@ template <typename T, typename ADR> unsigned char* RamMemory<T, ADR>::read(ADR a
     char byteSelect = adres & 0b1;
     unsigned char* datapointer = (unsigned char*) &this->ram[adres >> 1]);//add the pointer to the cacheline to the byteselect to calculate the final adres
     if (&datapointer[byteSelect] + n > this->ram.lastElement) {
-        return 0; //if the last byte that we read is above the last element we got to return
+        return &DynamicArray::justkillmealready; //if the last byte that we read is above the last element we got to return
     }
     return &datapointer[byteSelect];
 }

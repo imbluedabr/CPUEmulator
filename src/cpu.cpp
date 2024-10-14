@@ -57,7 +57,7 @@ inline void CPU::interupt(Byte intv) {
     setBit(FLAG_INTERUPT);
     clearBit(FLAG_USERMODE);
     push(this->regs[REG_PC], 2);//push the pc to the kernel stack pointer
-    this->regs[REG_PC] = this->memory.read(intv, 2);
+    this->regs[REG_PC] = *(Word*)this->memory.read(intv, 2);
 }
 
 inline Word CPU::pop(Byte n) {
@@ -65,7 +65,7 @@ inline Word CPU::pop(Byte n) {
 }
 
 inline void CPU::push(Word value, Byte n) {
-    
+    //this->memory.read(getReg(REG_SP)); this shit is hella broken
 }
 
 //main functions

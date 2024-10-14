@@ -21,8 +21,9 @@ class CPU {
         REG_F,
         REG_PC,
         REG_SR,
-        REG_KSP,
-        REG_USP
+        REG_SP = 8,
+        REG_KSP = 8, //KSP and USP are for internal use only, the program can only see one SP
+        REG_USP = 9
     };
     enum flags {
         FLAG_ZERO,
