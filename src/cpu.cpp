@@ -58,7 +58,7 @@ inline void CPU::interupt(Byte intv) {
     setBit(FLAG_INTERUPT);
     clearBit(FLAG_USERMODE);
     push(this->regs[REG_PC], 2);//push the pc to the kernel stack pointer
-    this->registers[REG_PC] = this->memory.read( intv*2, 2); //read the interupt vector from memory
+    this->registers[REG_PC] = this->memory.read(intvTable + intv*2, 2); //read the interupt vector from memory
 }
 
 //pop n bytes from the stack

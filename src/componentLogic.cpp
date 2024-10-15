@@ -129,7 +129,7 @@ void FlashDevice::update() {
 
 //now the dma stuff
 //class DMAChannel
-template <typename T, typename ADR> DMAChannel::DMAChannel() {
+template <typename T, typename ADR> DMAChannel<T, ADR>::DMAChannel() {
     this->source = NULL;
     this->size = 0;
     this->sourceAdres = 0;
@@ -139,21 +139,39 @@ template <typename T, typename ADR> DMAChannel::DMAChannel() {
 }
 
 //class DMAControllerDevice
-template <typename T, typename ADR> DMAControllerDevice::DMAControllerDevice(CPU* parent) : Component(parent) {
+template <typename T, typename ADR> DMAControllerDevice<T, ADR>::DMAControllerDevice(CPU* parent) : Component(parent) {
     
 }
 
 //request a DMA read
-template <typename T, typename ADR> bool DMAControllerDevice::DMARead(int channel, DynamicArray<T>* dest, ADR size, unsigned int destAdres, ADR sourceAdres) {
+template <typename T, typename ADR> bool DMAControllerDevice<T, ADR>::DMARead(int channel, DynamicArray<T>* dest, ADR size, unsigned int destAdres, ADR sourceAdres) {
 
 }
 
 //request a DMA write
-template <typename T, typename ADR> bool DMAControllerDevice::DMAWrite(int channel, DynamicArray<T>* source, ADR size, unsigned int sourceAdres, ADR destAdres) {
+template <typename T, typename ADR> bool DMAControllerDevice<T, ADR>::DMAWrite(int channel, DynamicArray<T>* source, ADR size, unsigned int sourceAdres, ADR destAdres) {
 
 }
 
 //handles the DMA requests
-template <typename T, typename ADR> void DMAControllerDevice::update() {
-
+template <typename T, typename ADR> void DMAControllerDevice<T, ADR>::update() {
+    for (int channel = 0; channel < channels; channel++) {
+        DMAChannel<T, ADR>* currentChannel = &DMAChannelArray[channel];
+        if (currentChannel->size > 0) {
+            if (currentChannel->RW) {//write
+                parent->memory.write(currentChannel->destAdres, (*currentChannel->source)[currentChannel->sourceAdres], sizeof(T));
+                currentChannel->sourceAdres++; //this needs to be changed so that it depends on the size of T
+                currentChannel->destAdres++;
+                currentChannel->size--;
+            } else {//read
+                (*currentChannel->source)[currentChannel->sourceAdres] = parent->memory.read(currentChannel->destAdres, sizeof(T));
+                currentChannel->sourceAdres++;//this also needs to be changed
+                currentChannel->destAdres++;
+                currentChannel->size--;
+            }
+            if (currentChannel->size == 0) {//dma finished now we should trigger a hardware interupt
+                std::cout << "dma finished!\n";
+            }
+        }
+    }
 }
