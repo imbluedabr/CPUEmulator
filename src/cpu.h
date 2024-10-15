@@ -1,7 +1,7 @@
 #include "components.h"
 //Word is the wordsize of the cpu
-typedef Word = short unsigned int;
-typedef Byte = unsigned char;
+using Word = short unsigned int;
+using Byte = unsigned char;
 
 //should probally make this an interface using pure virtual functions and then
 //inherit from CPU and overwrite all virtual functions so i can have multiple

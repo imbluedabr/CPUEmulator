@@ -31,7 +31,7 @@ Component::Component(CPU* parent) { this->parent = parent; }
 
 //RamMemory
 
-template <typename T, typename ADR> RamMemory<T>::RamMemory(CPU* parent, ADR size) :
+template <typename T, typename ADR> RamMemory<T, ADR>::RamMemory(CPU* parent, ADR size) :
 							ram(size),
 							Component(parent)
 {
@@ -51,7 +51,7 @@ template <typename T, typename ADR> void RamMemory<T, ADR>::load(T* data, ADR si
 }
 
 template <typename T, typename ADR> void RamMemory<T, ADR>::loadBios() {
-    constexpr buffersize = wordSize/512;
+    constexpr size_t buffersize = wordSize/512;
     T bios[buffersize];//buffer for the bios
     std::ifstream input("Bios.bin", std::ios::binary);
     if (!input) {//check if the file is opened
@@ -63,7 +63,7 @@ template <typename T, typename ADR> void RamMemory<T, ADR>::loadBios() {
 }
 
 template <typename T, typename ADR> void RamMemory<T, ADR>::dump(ADR start, ADR end) {
-    for (ADR i = start, i < end; i++) {
+    for (ADR i = start; i < end; i++) {
         std::cout << std::hex << this->ram[i] << ", \n";
     }
 }
@@ -108,7 +108,7 @@ void FlashDevice::loadFlash() {
         return;
     }
     file.unsetf(std::ios::skipws);
-    file.read(&this->flash.array, this->flash.size);
+    file.read((char*)this->flash.array, this->flash.size);
 }
 
 void FlashDevice::storeFlash() {
@@ -127,6 +127,16 @@ void FlashDevice::update() {
 }
 
 
+//class SerialIODevice
+SerialIODevice::SerialIODevice(CPU* parent) : Component(parent) {
+
+}
+
+void SerialIODevice::update() {
+    //handle serial io stuff
+}
+
+
 //now the dma stuff
 //class DMAChannel
 template <typename T, typename ADR> DMAChannel<T, ADR>::DMAChannel() {
@@ -135,7 +145,6 @@ template <typename T, typename ADR> DMAChannel<T, ADR>::DMAChannel() {
     this->sourceAdres = 0;
     this->destAdres = 0;
     this->RW = false;
-    this->alive = false;
 }
 
 //class DMAControllerDevice
@@ -145,17 +154,37 @@ template <typename T, typename ADR> DMAControllerDevice<T, ADR>::DMAControllerDe
 
 //request a DMA read
 template <typename T, typename ADR> bool DMAControllerDevice<T, ADR>::DMARead(int channel, DynamicArray<T>* dest, ADR size, unsigned int destAdres, ADR sourceAdres) {
-
+    DMAChannel<T, ADR>* currentChannel = &DMAChannelArray[channel];
+    if (currentChannel->size == 0) {
+        currentChannel->source = dest;
+        currentChannel->size = size;
+        currentChannel->sourceAdres = destAdres;
+        currentChannel->destAdres = sourceAdres;
+        currentChannel->RW = false;
+        return true;
+    } else {
+        return false; //dma request got denied since the channel was busy
+    }
 }
 
 //request a DMA write
 template <typename T, typename ADR> bool DMAControllerDevice<T, ADR>::DMAWrite(int channel, DynamicArray<T>* source, ADR size, unsigned int sourceAdres, ADR destAdres) {
-
+    DMAChannel<T, ADR>* currentChannel = &DMAChannelArray[channel];
+    if (currentChannel->size == 0) {
+        currentChannel->source = source;
+        currentChannel->size = size;
+        currentChannel->sourceAdres = sourceAdres;
+        currentChannel->destAdres = destAdres;
+        currentChannel->RW = true;
+        return true;
+    } else {
+        return false; //dma request got denied since the channel was busy
+    }
 }
 
 //handles the DMA requests
 template <typename T, typename ADR> void DMAControllerDevice<T, ADR>::update() {
-    for (int channel = 0; channel < channels; channel++) {
+    for (int channel = 0; channel < channels; channel++) {//this fr makes my brain hurt
         DMAChannel<T, ADR>* currentChannel = &DMAChannelArray[channel];
         if (currentChannel->size > 0) {
             if (currentChannel->RW) {//write

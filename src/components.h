@@ -21,7 +21,7 @@ class CPU;
 class Component {
     public:
     CPU* parent;
-    void Component(CPU* parent);
+    Component(CPU* parent);
 };
 
 template <typename T, typename ADR> class RamMemory : public Component {
@@ -56,7 +56,7 @@ class FlashDevice : public Component {
     void dump(unsigned int start, unsigned int end);
     //update the FlashDevice, contains all the io and dma logic
     void update();
-}
+};
 
 class SerialIODevice : public Component {
     public:
@@ -64,7 +64,7 @@ class SerialIODevice : public Component {
     SerialIODevice(CPU* parent);
     //update the SerialIODevice, contains all io logic
     void update();
-}
+};
 
 template <typename T, typename ADR> class DMAChannel {
     public:
@@ -73,9 +73,8 @@ template <typename T, typename ADR> class DMAChannel {
     unsigned int sourceAdres; //the adres in the hardware buffer to read / write to
     ADR destAdres; //the adres in ram
     bool RW; //if the dma operation is to read or write to ram
-    bool alive; //if this dma channel is bussy or not
     DMAChannel();
-}
+};
 
 template <typename T, typename ADR> class DMAControllerDevice : public Component {
     public:
@@ -85,9 +84,9 @@ template <typename T, typename ADR> class DMAControllerDevice : public Component
     //constructor
     DMAControllerDevice(CPU* parent);
     //dma read request
-    int DMARead(int channel, DynamicArray<T>* dest, ADR size, unsigned int destAdres, ADR sourceAdres);
+    bool DMARead(int channel, DynamicArray<T>* dest, ADR size, unsigned int destAdres, ADR sourceAdres);
     //dma write request
-    int DMAWrite(int channel, DynamicArray<T>* source, ADR size, unsigned int sourceAdres, ADR destAdres);
+    bool DMAWrite(int channel, DynamicArray<T>* source, ADR size, unsigned int sourceAdres, ADR destAdres);
     //updates the dma transfer, contains all dma transfer logic
     void update();
 };
