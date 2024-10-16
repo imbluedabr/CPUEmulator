@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -45,6 +46,7 @@ template <typename T, typename ADR> class RamMemory : public Component {
 };
 
 class FlashDevice : public Component {
+    public:
     DynamicArray<unsigned char> flash;
     //constructor
     FlashDevice(CPU* parent, unsigned int size);

@@ -57,7 +57,7 @@ inline Word CPU::parseFlags(Word value) {
 inline void CPU::interupt(Byte intv) {
     setBit(FLAG_INTERUPT);
     clearBit(FLAG_USERMODE);
-    push(this->regs[REG_PC], 2);//push the pc to the kernel stack pointer
+    push(this->registers[REG_PC], 2);//push the pc to the kernel stack pointer
     this->registers[REG_PC] = this->memory.read(intvTable + intv*2, 2); //read the interupt vector from memory
 }
 
@@ -86,5 +86,4 @@ void CPU::reset() {
     for (int i = 0; i < register_count; i++) {//reset the registers
         this->registers[i] = 0;
     }
-    this->userMode = false;
 }

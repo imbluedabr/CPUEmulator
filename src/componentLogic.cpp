@@ -1,4 +1,4 @@
-#include "cpu.h"
+#include "cpu.cpp"
 
 //contains all the logic for the components
 
@@ -73,7 +73,7 @@ template <typename T, typename ADR> T RamMemory<T, ADR>::read(ADR adres, unsigne
     char byteSelect = adres & 0b1;
     T justenditalready = 0;//very bad code since we first copy data into this var and then we make another copy since we return it
     unsigned char* datapointer = (unsigned char*) &this->ram[adres >> 1];//add the pointer to the cacheline to the byteselect to calculate the final adres
-    if (&datapointer[byteSelect] + n > this->ram.lastElement) {
+    if (&datapointer[byteSelect] + n > (unsigned char*)this->ram.lastElement) {
         return justenditalready; //if the last byte that we read is above the last element we got to return
     }
     //ugh i hate this man why cant i write good code
@@ -85,7 +85,7 @@ template <typename T, typename ADR> void RamMemory<T, ADR>::write(ADR adres, T v
     //get ready for some more unperormant trash piece of shit code
     char byteSelect = adres & 0b1; //get the value of the first bit
     unsigned char* datapointer = (unsigned char*) &this->ram[adres >> 1];
-    if (&datapointer[byteSelect] + n > this->ram.lastElement) {
+    if (&datapointer[byteSelect] + n > (unsigned char*)this->ram.lastElement) {
         return;
     }
     memcpy(&datapointer[byteSelect], &value, n);//copy the selected bytes into ram

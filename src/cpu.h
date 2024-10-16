@@ -1,3 +1,4 @@
+#pragma once
 #include "components.h"
 //Word is the wordsize of the cpu
 using Word = short unsigned int;
