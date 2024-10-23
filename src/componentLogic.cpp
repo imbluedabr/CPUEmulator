@@ -98,21 +98,28 @@ template <typename T, typename ADR> void RamMemory<T, ADR>::write(ADR adres, T v
 FlashDevice::FlashDevice(CPU* parent, unsigned int size) : flash(size),
                                                            Component(parent)
 {
-    
+    loadFlash();
 }
 
+//load the Flash.bin file into the flash memory
 void FlashDevice::loadFlash() {
     std::ifstream file("Flash.bin", std::ios::binary);
     if (!file) {
-        std::cerr << "couldt load the Flash.bin file into flash memory!\n";
+        std::cerr << "Error: could not open \"Flash.bin\"\n";
         return;
     }
     file.unsetf(std::ios::skipws);
     file.read((char*)this->flash.array, this->flash.size);
 }
 
+//store the flash memory into the Flash.bin file
 void FlashDevice::storeFlash() {
-    
+    std::ofstream file("Flash.bin", std::ios::binary);
+    if(!file) {
+        std::cerr << "Error: could not open \"Flash.bin\" warning flash memory was not saved!\n";
+    }
+    file.unsetf(std::ios::skipws);
+    file.write((char*)this->flash.array, this->flash.size);
 }
 
 void FlashDevice::dump(unsigned int start, unsigned int end) {

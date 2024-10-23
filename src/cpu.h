@@ -1,4 +1,4 @@
-#pragma once
+
 #include "components.h"
 //Word is the wordsize of the cpu
 using Word = short unsigned int;
@@ -10,10 +10,10 @@ using Byte = unsigned char;
 
 class CPU {
     public:
-    static constexpr Word register_count = 12;
+    static constexpr Word register_count = 10;
     static constexpr Word intvTable = 0x0000; //location where the interupt vector table is stored in ram
     //core cpu data
-    Word registers[register_count]; //a, b, c, d, e, f, usp, ssp, pc, sr
+    Word registers[register_count]; //a, b, c, d, e, f, pc, sr, ksp, usp
     enum regs {
         REG_A,
         REG_B,
@@ -31,8 +31,10 @@ class CPU {
         FLAG_ZERO,
         FLAG_NEG,
         FLAG_CARRY,
-        FLAG_USERMODE,
-        FLAG_INTERUPT
+        FLAG_USERMODE, //if the cpu is in usermode or not
+        FLAG_INTERUPT, //if the cpu is handeling an interupt request
+        FLAG_HALT,     //if the cpu is halted or not
+        FLAG_ENABLEINT //if interupts are enabled or not
     };
     Word IOBus[256];
 
@@ -54,11 +56,14 @@ class CPU {
     Word getReg(Byte reg);
     void setReg(Byte reg, Word value);
     Word parseFlags(Word value);
-    void interupt(Byte intv);//cause an interupt with interupt vector "intv"
+    void interupt(Byte intv);//cause an interupt with interupt vector intv
     Word pop(Byte n);//pop n amount of bytes from the stack
     void push(Word value, Byte n);//push n amount of bytes to the stack
+    void incPC(Word i);
+    Word getOpc(Byte n);
 
     //main functions
     void execute();
     void reset();
+    void status();
 };

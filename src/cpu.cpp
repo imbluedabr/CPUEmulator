@@ -73,10 +73,30 @@ inline void CPU::push(Word value, Byte n) {
     this->registers[REG_SP + getBit(FLAG_USERMODE)] -= n;//this is a decrementing stack architecture so decrement REG_SP by n bytes
 }
 
+inline void CPU::incPC(Word i) {
+    this->registers[REG_PC] += i;
+}
+
+inline Word CPU::getOpc(Byte n) {
+    return this->memory.read(this->registers[REG_PC], n);
+}
+
 //main functions
 
 void CPU::execute() {
-    
+    Byte opcode = (Byte) this->memory.read(this->registers[REG_PC], 1);
+    //instruction set
+    switch(opcode) {
+        case 0: {
+            incPC(1);
+        }
+        case 1: {
+            Byte val = (Byte) getOpc(1);
+            std::cout << "val: " << val << "\n";
+        }
+        default:
+            incPC(1);
+    }
 }
 
 void CPU::reset() {
@@ -86,4 +106,12 @@ void CPU::reset() {
     for (int i = 0; i < register_count; i++) {//reset the registers
         this->registers[i] = 0;
     }
+}
+
+void CPU::status() {
+    for (int i = 0; i < register_count; i++) {
+        std::cout << "reg" << i << ": " << this->registers[i] << "\n";
+    }
+    std::cout << "FLAG_USERMODE: " << getBit(FLAG_USERMODE) << "\n";
+    std::cout << "FLAG_INTERUPT: " << getBit(FLAG_INTERUPT) << "\n";
 }
