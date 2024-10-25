@@ -77,23 +77,38 @@ inline void CPU::incPC(Word i) {
     this->registers[REG_PC] += i;
 }
 
-inline Word CPU::getOpc(Byte n) {
-    return this->memory.read(this->registers[REG_PC], n);
+inline Word CPU::getOp(Byte n) { //get operand
+    Word val = this->memory.read(this->registers[REG_PC], n);
+	incPC(n);
+	return val;
 }
+
+inline Word CPU::read(Word adres, Byte n) {//wraper for read operation
+	return this->memory.read(adres, n);
+} 
 
 //main functions
 
 void CPU::execute() {
-    Byte opcode = (Byte) this->memory.read(this->registers[REG_PC], 1);
+    Byte opcode = (Byte) getOp(1);
     //instruction set
+	//register select is 1 byte
+	//opcodes are 1 byte
+	//adreses are 2 bytes
+	//inmeadiate values are 1 or 2 bytes, depends on the instruction, if it is a "word" or "byte" instruction
     switch(opcode) {
         case 0: {
             incPC(1);
         }
-        case 1: {
-            Byte val = (Byte) getOpc(1);
-            std::cout << "val: " << val << "\n";
+        case 1: { //movw reg[op1] = op2
+            setReg(getOp(1), getOp(2));
         }
+		case 2: { //movw reg[op1] = reg[op2]
+			setReg(getOp(1), getOp(2))
+		}
+		case 3: {//movw reg[op1] = read(op2)
+            setReg(getOp(1), )
+		}
         default:
             incPC(1);
     }

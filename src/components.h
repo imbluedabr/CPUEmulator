@@ -47,6 +47,12 @@ template <typename T, typename ADR> class RamMemory : public Component {
 class FlashDevice : public Component {
     public:
     DynamicArray<unsigned char> flash;
+    enum IORegs {
+        IO_DISKADR = 0x0A, //sector adres on the disk
+        IO_RAMADR  = 0x0B, //adres in ram
+        IO_BLOCKS  = 0x0C, //amount of sectors to read / write
+        IO_CR      = 0x0D  //control register bit0 = read / write, bit1 = request dma
+    };
     //constructor
     FlashDevice(CPU* parent, unsigned int size);
     //load the Flash.bin file into the flash
@@ -74,6 +80,7 @@ template <typename T, typename ADR> class DMAChannel {
     unsigned int sourceAdres; //the adres in the hardware buffer to read / write to
     ADR destAdres; //the adres in ram
     bool RW; //if the dma operation is to read or write to ram
+    unsigned char irqVec;
     DMAChannel();
 };
 
@@ -85,9 +92,7 @@ template <typename T, typename ADR> class DMAControllerDevice : public Component
     //constructor
     DMAControllerDevice(CPU* parent);
     //dma read request
-    bool DMARead(int channel, DynamicArray<T>* dest, ADR size, unsigned int destAdres, ADR sourceAdres);
-    //dma write request
-    bool DMAWrite(int channel, DynamicArray<T>* source, ADR size, unsigned int sourceAdres, ADR destAdres);
+    bool DMAOperation(int channel, bool RW, DynamicArray<T>* dest, ADR size, unsigned int destAdres, ADR sourceAdres, unsigned char irqVec);
     //updates the dma transfer, contains all dma transfer logic
     void update();
 };

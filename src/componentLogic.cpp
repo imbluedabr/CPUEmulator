@@ -82,7 +82,7 @@ template <typename T, typename ADR> T RamMemory<T, ADR>::read(ADR adres, unsigne
 }
 
 template <typename T, typename ADR> void RamMemory<T, ADR>::write(ADR adres, T value, unsigned char n) {
-    //get ready for some more unperormant trash piece of shit code
+    //get ready for some more unperformant trash piece of shit code
     char byteSelect = adres & 0b1; //get the value of the first bit
     unsigned char* datapointer = (unsigned char*) &this->ram[adres >> 1];
     if (&datapointer[byteSelect] + n > (unsigned char*)this->ram.lastElement) {
@@ -116,7 +116,7 @@ void FlashDevice::loadFlash() {
 void FlashDevice::storeFlash() {
     std::ofstream file("Flash.bin", std::ios::binary);
     if(!file) {
-        std::cerr << "Error: could not open \"Flash.bin\" warning flash memory was not saved!\n";
+        std::cerr << "Error: could not open \"Flash.bin\"\n Warning: flash memory was not saved!\n";
     }
     file.unsetf(std::ios::skipws);
     file.write((char*)this->flash.array, this->flash.size);
@@ -130,7 +130,15 @@ void FlashDevice::dump(unsigned int start, unsigned int end) {
 
 //this will request dma when the right io registers get the right values
 void FlashDevice::update() {
-    
+    if (parent->IOBus[IO_CR] & 0x2 == 0x2) {//check if the dma request bit is set in the control register
+        parent->DMAController.DMAOperation(
+            0, //dma channel 0
+            parent->IOBus[IO_CR] & 0x1, //check bit 0 of the control register
+            &this->flash,
+            parent->IOBus[IO_BLOCKS] * 512,
+            //not finished
+        );
+    }
 }
 
 
@@ -159,30 +167,16 @@ template <typename T, typename ADR> DMAControllerDevice<T, ADR>::DMAControllerDe
     
 }
 
-//request a DMA read
-template <typename T, typename ADR> bool DMAControllerDevice<T, ADR>::DMARead(int channel, DynamicArray<T>* dest, ADR size, unsigned int destAdres, ADR sourceAdres) {
+//request DMA
+template <typename T, typename ADR> bool DMAControllerDevice<T, ADR>::DMAOperation(int channel, bool RW, DynamicArray<T>* dest, ADR size, unsigned int destAdres, ADR sourceAdres, unsigned char irqVec) {
     DMAChannel<T, ADR>* currentChannel = &DMAChannelArray[channel];
     if (currentChannel->size == 0) {
         currentChannel->source = dest;
         currentChannel->size = size;
         currentChannel->sourceAdres = destAdres;
         currentChannel->destAdres = sourceAdres;
-        currentChannel->RW = false;
-        return true;
-    } else {
-        return false; //dma request got denied since the channel was busy
-    }
-}
-
-//request a DMA write
-template <typename T, typename ADR> bool DMAControllerDevice<T, ADR>::DMAWrite(int channel, DynamicArray<T>* source, ADR size, unsigned int sourceAdres, ADR destAdres) {
-    DMAChannel<T, ADR>* currentChannel = &DMAChannelArray[channel];
-    if (currentChannel->size == 0) {
-        currentChannel->source = source;
-        currentChannel->size = size;
-        currentChannel->sourceAdres = sourceAdres;
-        currentChannel->destAdres = destAdres;
-        currentChannel->RW = true;
+        currentChannel->RW = RW;
+        currentChannel->irqVec = irqVec;
         return true;
     } else {
         return false; //dma request got denied since the channel was busy
@@ -206,7 +200,7 @@ template <typename T, typename ADR> void DMAControllerDevice<T, ADR>::update() {
                 currentChannel->size--;
             }
             if (currentChannel->size == 0) {//dma finished now we should trigger a hardware interupt
-                std::cout << "dma finished!\n";
+                parent->interupt(currentChannel->irqVec);
             }
         }
     }
