@@ -82,7 +82,7 @@ template <typename T, typename ADR> T RamMemory<T, ADR>::read(ADR adres, unsigne
 }
 
 template <typename T, typename ADR> void RamMemory<T, ADR>::write(ADR adres, T value, unsigned char n) {
-    //get ready for some more unperformant trash piece of shit code
+    //i dont like this but it will have to do
     char byteSelect = adres & 0b1; //get the value of the first bit
     unsigned char* datapointer = (unsigned char*) &this->ram[adres >> 1];
     if (&datapointer[byteSelect] + n > (unsigned char*)this->ram.lastElement) {
@@ -130,14 +130,19 @@ void FlashDevice::dump(unsigned int start, unsigned int end) {
 
 //this will request dma when the right io registers get the right values
 void FlashDevice::update() {
-    if (parent->IOBus[IO_CR] & 0x2 == 0x2) {//check if the dma request bit is set in the control register
-        parent->DMAController.DMAOperation(
-            0, //dma channel 0
+    if ((parent->IOBus[IO_CR] & 0x2) == 0x2) {//check if the dma request bit is set in the control register
+        bool succes = parent->DMAController.DMAOperation(
+            CPU::DMA_FLASH, //dma channel 0
             parent->IOBus[IO_CR] & 0x1, //check bit 0 of the control register
             &this->flash,
             parent->IOBus[IO_BLOCKS] * 512,
-            //not finished
+            parent->IOBus[IO_RAMADR],
+            parent->IOBus[IO_DISKADR] * 512,
+            CPU::INT_FLASHDMA
         );
+        if (succes) {
+            parent->IOBus[IO_CR] &= !(0x2); //clear dma request bit
+        }
     }
 }
 

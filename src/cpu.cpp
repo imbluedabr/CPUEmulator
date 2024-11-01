@@ -79,23 +79,28 @@ inline void CPU::incPC(Word i) {
 
 inline Word CPU::getOp(Byte n) { //get operand
     Word val = this->memory.read(this->registers[REG_PC], n);
-	incPC(n);
-	return val;
+    incPC(n);
+    return val;
 }
 
 inline Word CPU::read(Word adres, Byte n) {//wraper for read operation
-	return this->memory.read(adres, n);
-} 
+    return this->memory.read(adres, n);
+}
+
+inline void CPU::write(Word adres, Word value, Byte n) {//wraper for write operation
+    this->memory.write(adres, value, n);
+}
 
 //main functions
 
 void CPU::execute() {
     Byte opcode = (Byte) getOp(1);
     //instruction set
-	//register select is 1 byte
-	//opcodes are 1 byte
-	//adreses are 2 bytes
-	//inmeadiate values are 1 or 2 bytes, depends on the instruction, if it is a "word" or "byte" instruction
+    //register select is 1 byte
+    //opcodes are 1 byte
+    //adreses are 2 bytes
+    //inmeadiate values are 1 or 2 bytes, depends on the instruction, if it is a "word" or "byte" instruction
+    //TODO: add MMU and make setreg and mem write functions fail when FLAG_INTERUPT is high
     switch(opcode) {
         case 0: {
             incPC(1);
@@ -103,14 +108,20 @@ void CPU::execute() {
         case 1: { //movw reg[op1] = op2
             setReg(getOp(1), getOp(2));
         }
-		case 2: { //movw reg[op1] = reg[op2]
-			setReg(getOp(1), getOp(2))
-		}
-		case 3: {//movw reg[op1] = read(op2)
-            setReg(getOp(1), )
-		}
+	case 2: { //movw reg[op1] = reg[op2]
+	    setReg(getOp(1), getOp(2));
+	}
+	case 3: {//movw reg[op1] = read(op2)
+            setReg(
+                getOp(1), //get the operand for the register
+                read( //read word from memory
+                    getOp(2), //get operand for the adres
+                    2
+                )
+            );
+	}
         default:
-            incPC(1);
+            interupt(INT_INVOPC); //cause invalid opcode interupt
     }
 }
 

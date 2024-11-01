@@ -67,6 +67,10 @@ class FlashDevice : public Component {
 
 class SerialIODevice : public Component {
     public:
+    enum IORegs {//TODO: need to do more research on serial UART's and add the different IO registers
+        IO_TX,
+        IO_RX
+    };
     //constructor
     SerialIODevice(CPU* parent);
     //update the SerialIODevice, contains all io logic
