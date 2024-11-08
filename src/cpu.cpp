@@ -1,9 +1,46 @@
 #include "cpu.h"
 
+//class IOBus
+
+IOEntry::IOEntry() {
+    this->write = NULL;
+    this->read = NULL;
+    this->val = 0;
+}
+
+IOBusHandeler::IOBusHandeler(CPU* parent) : Component(parent) {}
+
+void IOBusHandeler::atachDev(Byte adres, void (*write)(CPU*, Word), Word (*read)(CPU*)) {
+    this->IOList[adres].write = write;
+    this->IOList[adres].read = read;
+}
+
+Word IOBusHandeler::readIO(Byte adres) {
+    IOEntry* entry = &this->IOList[adres];
+    if (entry->read != NULL) {
+        return entry->read(this->parent);
+    }
+    return entry->val;
+}
+
+void IOBusHandeler::writeIO(Byte adres, Word value) {
+    IOEntry* entry = &this->IOList[adres];
+    if (entry->write != NULL) {
+        entry->write(this->parent, value);
+    }
+    entry->val = value;
+}
+
+Word& IOBusHandeler::operator[](Byte adres) {
+    return this->IOList[adres].val;
+}
+
+
 //class CPU
 
 CPU::CPU() : memory(this, 1024),
              DMAController(this),
+             IOBus(this),
              serialIO(this),
              flash(this, 1024)
 {
@@ -55,21 +92,27 @@ inline Word CPU::parseFlags(Word value) {
 
 //cause an interupt
 inline void CPU::interupt(Byte intv) {
+    if (getBit(FLAG_MASKINT) && (intv != INT_NMI)) {//dont interupt if the int mask is high and the interupt is not a non maskable interupt
+        return;
+    }
     setBit(FLAG_INTERUPT);
     clearBit(FLAG_USERMODE);
-    push(this->registers[REG_PC], 2);//push the pc to the kernel stack pointer
+    for (int i = 0; i < 7; i++) {//push the general purpose registers to the stack to preserve them
+        this->memory.write(this->registers[REG_KSP], this->registers[i], 2);
+        this->registers[REG_KSP] += 2;
+    }
     this->registers[REG_PC] = this->memory.read(intvTable + intv*2, 2); //read the interupt vector from memory
 }
 
 //pop n bytes from the stack
 inline Word CPU::pop(Byte n) {
     this->registers[REG_SP + getBit(FLAG_USERMODE)] += n;
-    return this->memory.read(this->registers[REG_SP], n);
+    return read(this->registers[REG_SP + getBit(FLAG_USERMODE)], n);
 }
 
 //push n bytes to the stack
 inline void CPU::push(Word value, Byte n) {
-    this->memory.write(this->registers[REG_SP], value, n);//write n bytes to the adres in REG_SP
+    write(this->registers[REG_SP + getBit(FLAG_USERMODE)], value, n);//write n bytes to the adres in REG_SP
     this->registers[REG_SP + getBit(FLAG_USERMODE)] -= n;//this is a decrementing stack architecture so decrement REG_SP by n bytes
 }
 
@@ -83,12 +126,33 @@ inline Word CPU::getOp(Byte n) { //get operand
     return val;
 }
 
-inline Word CPU::read(Word adres, Byte n) {//wraper for read operation
-    return this->memory.read(adres, n);
+//should contain mmu logic
+inline Word CPU::read(Word virtAdres, Byte n) {//wraper for read operation
+    if (getBit(FLAG_USERMODE)) {
+        Word adres = this->IOBus[MMU_BASEADR] + virtAdres;
+        if (adres > this->IOBus[MMU_TOPADR]) {
+            interupt(INT_GPF); //cause a segmentation fault
+            return 0;
+        }
+        return this->memory.read(adres, n);
+    }
+    return this->memory.read(virtAdres, n);
 }
 
-inline void CPU::write(Word adres, Word value, Byte n) {//wraper for write operation
-    this->memory.write(adres, value, n);
+inline void CPU::write(Word virtAdres, Word value, Byte n) {//wraper for write operation
+    if (getBit(FLAG_INTERUPT)) {
+        return;
+    }
+    if (getBit(FLAG_USERMODE)) {
+        Word adres = this->IOBus[MMU_BASEADR] + adres;
+        if (adres > this->IOBus[MMU_TOPADR]) {
+            interupt(INT_GPF); //cause a segmentation fault
+            return;
+        }
+        this->memory.write(adres, value, n);
+    } else {
+        this->memory.write(virtAdres, value, n);
+    }
 }
 
 //main functions
@@ -111,7 +175,7 @@ void CPU::execute() {
 	case 2: { //movw reg[op1] = reg[op2]
 	    setReg(getOp(1), getOp(2));
 	}
-	case 3: {//movw reg[op1] = read(op2)
+	case 3: { //movw reg[op1] = mem[op2]
             setReg(
                 getOp(1), //get the operand for the register
                 read( //read word from memory
@@ -120,6 +184,18 @@ void CPU::execute() {
                 )
             );
 	}
+        case 4: { //movw mem[op1] = reg[op2]
+            write(
+                getOp(2),
+                getReg(
+                    getOp(1)
+                ),
+                2
+            );
+        }
+        case 255: {
+            setBit(FLAG_HALT);
+        }
         default:
             interupt(INT_INVOPC); //cause invalid opcode interupt
     }
@@ -132,6 +208,7 @@ void CPU::reset() {
     for (int i = 0; i < register_count; i++) {//reset the registers
         this->registers[i] = 0;
     }
+    this->registers[REG_PC] = 0x00FF; //adres where the cpu starts executing
 }
 
 void CPU::status() {

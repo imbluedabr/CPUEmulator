@@ -8,6 +8,25 @@ using Byte = unsigned char;
 //inherit from CPU and overwrite all virtual functions so i can have multiple
 //different cpu's and systems and still make every component compatible
 
+struct IOEntry {
+    void (*write)(CPU*, Word);
+    Word (*read)(CPU*);
+    Word val;
+    IOEntry();
+};
+
+class IOBusHandeler : public Component {
+    private:
+    IOEntry IOList[256];
+    public:
+    IOBusHandeler(CPU* parent);
+    void atachDev(Byte adres, void (*write)(CPU*, Word), Word (*read)(CPU*));
+    Word readIO(Byte adres);
+    void writeIO(Byte adres, Word value);
+    Word& operator[](Byte adres);
+};
+
+
 class CPU {
     public:
     static constexpr Word register_count = 10;
@@ -21,7 +40,7 @@ class CPU {
 	INT_BOUND, //caused when the BOUND instruction is executed and it detected out of bounds indexing
 	INT_INVOPC, //invalid opcode
 	INT_DEVNOTAVAIL, //device not available, gets called everytime an fpu instruction is called since im not adding an fpu(yet)
-	INT_DBLFAULT, //double fault
+	INT_DBLFAULT, //double fault, gets caused when there is another exception during a GPF exception
 	INT_RESERVED1, //legacy interupt
 	INT_INVTSS, //invalid TSS something about multi tasking, i dont rly understand much about this so...
 	INT_SEGNPRES, //segment not present
@@ -50,6 +69,7 @@ class CPU {
         REG_KSP = 8, //KSP and USP are for internal use only, the program can only see one SP
         REG_USP = 9
     };
+
     enum flags {
         FLAG_ZERO,
         FLAG_NEG,
@@ -57,9 +77,10 @@ class CPU {
         FLAG_USERMODE, //if the cpu is in usermode or not
         FLAG_INTERUPT, //if the cpu is handeling an interupt request
         FLAG_HALT,     //if the cpu is halted or not
-        FLAG_ENABLEINT //if interupts are enabled or not
+        FLAG_MASKINT //if interupts are enabled or not
     };
-    Word IOBus[256];
+
+    IOBusHandeler IOBus; //handles IO
 
     //core devices
     RamMemory<Word, Word> memory;
@@ -67,8 +88,13 @@ class CPU {
     enum DMA_channels {//dma chanels
         DMA_FLASH
     };
+    enum MMU_registers {//simple test will replace it with actual mmu that uses a GDT and stuff like that
+        MMU_BASEADR,
+        MMU_TOPADR,
+        MMU_VIRT
+    };
     //io devices
-    SerialIODevice serialIO;
+    SerialIODevice<Word> serialIO;
     FlashDevice flash;
 
     //constructor

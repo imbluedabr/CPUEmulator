@@ -56,6 +56,7 @@ template <typename T, typename ADR> void RamMemory<T, ADR>::loadBios() {
     std::ifstream input("Bios.bin", std::ios::binary);
     if (!input) {//check if the file is opened
         std::cerr << "Error: Could not open \"Bios.bin\"\n";
+        return;
     }
     input.unsetf(std::ios::skipws);//read 512 bytes into the ram memory
     input.read(reinterpret_cast<char*>(bios), 512);//idk what  this stuff means lol
@@ -117,6 +118,7 @@ void FlashDevice::storeFlash() {
     std::ofstream file("Flash.bin", std::ios::binary);
     if(!file) {
         std::cerr << "Error: could not open \"Flash.bin\"\n Warning: flash memory was not saved!\n";
+        return;
     }
     file.unsetf(std::ios::skipws);
     file.write((char*)this->flash.array, this->flash.size);
@@ -132,7 +134,7 @@ void FlashDevice::dump(unsigned int start, unsigned int end) {
 void FlashDevice::update() {
     if ((parent->IOBus[IO_CR] & 0x2) == 0x2) {//check if the dma request bit is set in the control register
         bool succes = parent->DMAController.DMAOperation(
-            CPU::DMA_FLASH, //dma channel 0
+            CPU::DMA_FLASH, //dma channel of the flash device
             parent->IOBus[IO_CR] & 0x1, //check bit 0 of the control register
             &this->flash,
             parent->IOBus[IO_BLOCKS] * 512,
@@ -148,12 +150,42 @@ void FlashDevice::update() {
 
 
 //class SerialIODevice
-SerialIODevice::SerialIODevice(CPU* parent) : Component(parent) {
-
+template <typename T> SerialIODevice<T>::SerialIODevice(CPU* parent) : Component(parent) {
+    parent->IOBus.atachDev(IO_RX, NULL, &SerialIODevice<T>::RXRead);
+    parent->IOBus.atachDev(IO_TX, &SerialIODevice<T>::TXWrite, NULL);
 }
 
-void SerialIODevice::update() {
+template <typename T> T SerialIODevice<T>::RXRead(CPU* parent) { //if the cpu reads from RX, read it from RXBuffer
+    T RXSize = parent->IOBus[IO_RXSIZE];
+    if (RXSize > 0) {
+        parent->IOBus[IO_RXSIZE]--;
+        return parent->serialIO.RXBuffer[RXSize];
+    }
+    return 0;
+}
+
+template <typename T> void SerialIODevice<T>::TXWrite(CPU* parent, T value) { //if the cpu writes to TX add it to TXBuffer
+    T TXSize = parent->IOBus[IO_TXSIZE];
+    if (TXSize < 16) {
+        parent->serialIO.TXBuffer[TXSize] = value;
+        parent->IOBus[IO_TXSIZE]++;
+    }
+}
+
+template <typename T> void SerialIODevice<T>::update() {
     //handle serial io stuff
+    Word TXSize = parent->IOBus[IO_TXSIZE];
+    if (TXSize > 0) { //if there is anything in the TXBuffer, send it to stdout
+        std::cout << this->TXBuffer[TXSize];
+        parent->IOBus[IO_TXSIZE]--;
+    }
+    if (kbhit()) { //incoming charcters are added to the RXBuffer
+        Word RXSize = parent->IOBus[IO_RXSIZE];
+        if (RXSize < 16) {
+            this->RXBuffer[RXSize] = getch();
+            parent->IOBus[IO_RXSIZE]++;
+        }
+    }
 }
 
 

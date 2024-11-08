@@ -65,17 +65,26 @@ class FlashDevice : public Component {
     void update();
 };
 
-class SerialIODevice : public Component {
+template<typename T> class SerialIODevice : public Component {
     public:
-    enum IORegs {//TODO: need to do more research on serial UART's and add the different IO registers
-        IO_TX,
-        IO_RX
+    enum IORegs {
+        IO_TX     = 0x1A,
+        IO_TXSIZE = 0x1B, //amount of bytes currently in the buffer
+        IO_RX     = 0x1C,
+        IO_RXSIZE = 0x1D
     };
+    char TXBuffer[16];
+    char RXBuffer[16];
+    //callbacks
+    static void TXWrite(CPU* parent, T value);
+    static T RXRead(CPU* parent);
     //constructor
     SerialIODevice(CPU* parent);
+
     //update the SerialIODevice, contains all io logic
     void update();
 };
+
 
 template <typename T, typename ADR> class DMAChannel {
     public:
