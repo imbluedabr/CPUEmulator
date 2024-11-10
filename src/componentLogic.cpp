@@ -45,8 +45,8 @@ template <typename T, typename ADR> void RamMemory<T, ADR>::reset() {
 }
 
 template <typename T, typename ADR> void RamMemory<T, ADR>::load(T* data, ADR size, ADR adres) {
-    for (ADR i = 0; i < adres; i++) {
-        this->ram[i] = data[i];
+    for (ADR i = 0; i < size; i++) {
+        this->ram[adres+i] = data[i];
     }
 }
 
@@ -65,7 +65,7 @@ template <typename T, typename ADR> void RamMemory<T, ADR>::loadBios() {
 
 template <typename T, typename ADR> void RamMemory<T, ADR>::dump(ADR start, ADR end) {
     for (ADR i = start; i < end; i++) {
-        std::cout << std::hex << this->ram[i] << ", \n";
+        std::cout << std::hex << this->ram[i] << ", ";
     }
 }
 
@@ -176,8 +176,8 @@ template <typename T> void SerialIODevice<T>::update() {
     //handle serial io stuff
     Word TXSize = parent->IOBus[IO_TXSIZE];
     if (TXSize > 0) { //if there is anything in the TXBuffer, send it to stdout
-        std::cout << this->TXBuffer[TXSize];
         parent->IOBus[IO_TXSIZE]--;
+        std::cout << this->TXBuffer[TXSize-1];
     }
     if (kbhit()) { //incoming charcters are added to the RXBuffer
         Word RXSize = parent->IOBus[IO_RXSIZE];

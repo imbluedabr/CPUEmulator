@@ -116,12 +116,12 @@ inline void CPU::push(Word value, Byte n) {
     this->registers[REG_SP + getBit(FLAG_USERMODE)] -= n;//this is a decrementing stack architecture so decrement REG_SP by n bytes
 }
 
-inline void CPU::incPC(Word i) {
+inline void CPU::incPC(Word i) { //increment the PC with i
     this->registers[REG_PC] += i;
 }
 
-inline Word CPU::getOp(Byte n) { //get operand
-    Word val = this->memory.read(this->registers[REG_PC], n);
+inline Word CPU::getOp(Byte n) { //get n amount of bytes from the adres currently in the PC and then increment the PC with n
+    Word val = read(this->registers[REG_PC], n);
     incPC(n);
     return val;
 }
@@ -159,23 +159,25 @@ inline void CPU::write(Word virtAdres, Word value, Byte n) {//wraper for write o
 
 void CPU::execute() {
     Byte opcode = (Byte) getOp(1);
+    Byte reg;
+    Word adres;
     //instruction set
     //register select is 1 byte
     //opcodes are 1 byte
     //adreses are 2 bytes
     //inmeadiate values are 1 or 2 bytes, depends on the instruction, if it is a "word" or "byte" instruction
     //TODO: add MMU and make setreg and mem write functions fail when FLAG_INTERUPT is high
+    std::cout << "opc: " << (Word) opcode << "\n";
     switch(opcode) {
-        case 0: {
-            incPC(1);
-        }
-        case 1: { //movw reg[op1] = op2
+        case 0:
+            break;
+        case 1: //movw reg[op1] = op2
             setReg(getOp(1), getOp(2));
-        }
-	case 2: { //movw reg[op1] = reg[op2]
-	    setReg(getOp(1), getOp(2));
-	}
-	case 3: { //movw reg[op1] = mem[op2]
+            break;
+	case 2: //movw reg[op1] = reg[op2]
+	    setReg(getOp(1), getReg(getOp(1)));
+	    break;
+	case 3: //movw reg[op1] = mem[op2]
             setReg(
                 getOp(1), //get the operand for the register
                 read( //read word from memory
@@ -183,19 +185,96 @@ void CPU::execute() {
                     2
                 )
             );
-	}
-        case 4: { //movw mem[op1] = reg[op2]
+	    break;
+        case 4: //movw reg[op1] = mem[reg[op2]]
+            setReg(
+                getOp(1),
+                read(
+                    getReg(
+                        getOp(1)
+                    ),
+                    2
+                )
+            );
+            break;
+        case 5: //movw reg[op1] = mem[reg[op2] + op3] --op3 is an ofset of 1 byte
+            setReg(
+                getOp(1),
+                read(
+                    getReg(
+                        getOp(1)
+                    ) + getOp(1),
+                    2
+                )
+            );
+            break;
+        case 6: //movw mem[op1] = op2
             write(
                 getOp(2),
+                getOp(2),
+                2
+            );
+            break;
+        case 7: //movw mem[op1] = reg[op2]
+            write(
+                getOp(2),
+                getReg(getOp(1)),
+                2
+            );
+            break;
+        case 8: //movw mem[reg[op1]] = reg[op2]
+            write(
+                getReg(
+                    getOp(1)
+                ),
                 getReg(
                     getOp(1)
                 ),
                 2
             );
-        }
-        case 255: {
+            break;
+        case 9: //movw mem[reg[op1] + op2] = reg[op3] --op2 is an ofset of 1 byte
+            write(
+                getReg(
+                     getOp(1)
+                ) + getOp(1),
+                getReg(
+                     getOp(1)
+                ),
+                2
+            );
+            break;
+        case 10: //inc
+            reg = (Byte) getOp(1);
+            setReg(reg, getReg(reg) + 1);
+            break;
+        case 11: //jmp
+            setReg(REG_PC, getOp(2));
+            break;
+        case 12:
+            adres = getOp(2);
+            if (getBit(FLAG_ZERO)) {
+                setReg(REG_PC, adres);
+            }
+            break;
+        case 13:
+            adres = getOp(2);
+            if (!getBit(FLAG_ZERO)) {
+                setReg(REG_PC, adres);
+            }
+            break;
+        case 200: //io[op1] = op2
+            this->IOBus.writeIO(getOp(1), getOp(2));
+            break;
+        case 201: //io[op1] = reg[op2]
+            this->IOBus.writeIO(getOp(1), getReg(getOp(1)));
+            break;
+        case 202: //reg[op1] = io[op2]
+            setReg(getOp(1), this->IOBus.readIO(getOp(1)));
+            break;
+        case 255:
             setBit(FLAG_HALT);
-        }
+            break;
         default:
             interupt(INT_INVOPC); //cause invalid opcode interupt
     }
