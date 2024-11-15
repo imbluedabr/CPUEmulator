@@ -48,15 +48,15 @@ CPU::CPU() : memory(this, 1024),
 }
 
 inline void CPU::setBit(Byte index) {
-    this->registers[REG_SR] |= (index << 1);
+    this->registers[REG_SR] |= (1 << index);
 }
 
 inline bool CPU::getBit(Byte index) {
-    return this->registers[REG_SR] & (index << 1);
+    return this->registers[REG_SR] & (1 << index);
 }
 
 inline void CPU::clearBit(Byte index) {
-    this->registers[REG_SR] &= ~(index << 1);
+    this->registers[REG_SR] &= ~(1 << index);
 }
 
 inline Word CPU::getReg(Byte reg) {

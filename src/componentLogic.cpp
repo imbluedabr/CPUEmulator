@@ -77,7 +77,7 @@ template <typename T, typename ADR> T RamMemory<T, ADR>::read(ADR adres, unsigne
     if (&datapointer[byteSelect] + n > (unsigned char*)this->ram.lastElement) {
         return justenditalready; //if the last byte that we read is above the last element we got to return
     }
-    //ugh i hate this man why cant i write good code
+    //i dont like this but it will have to do
     memcpy(&justenditalready, &datapointer[byteSelect], n);
     return justenditalready;
 }
