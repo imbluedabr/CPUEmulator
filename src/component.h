@@ -1,8 +1,10 @@
+#pragma once
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <memory>
 
+//ew dude what the fuck
 #include <conio.h>
 
 template <typename T> class DynamicArray {
@@ -32,7 +34,7 @@ template <typename T, typename ADR> class RamMemory : public Component {
     RamMemory(CPU* parent, ADR size);
     //reset the memory
     void reset();
-    //load an array of size "size" and at ädres in ram at "adres"
+    //load an array of size "size" and at adres in ram at "adres"
     void load(T* data, ADR size, ADR adres);
     //load a binery file into ram
     void loadBios();

@@ -1,3 +1,4 @@
+#include "component.h"
 #include "cpu.h"
 
 //class IOBus
@@ -60,8 +61,11 @@ inline void CPU::clearBit(Byte index) {
 }
 
 inline Word CPU::getReg(Byte reg) {
-    if (getBit(FLAG_USERMODE) && reg > REG_SR) {
-        return this->registers[reg+1];
+    if (reg > REG_USP) { //prevent out of bound read
+        return 0;
+    }
+    if (getBit(FLAG_USERMODE) && reg == REG_SP) {
+        return this->registers[REG_USP];
     }
     return this->registers[reg];
 }

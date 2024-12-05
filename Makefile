@@ -1,5 +1,5 @@
 
-main_files := main.cpp componentLogic.cpp cpu.cpp cpu.h components.h
+main_files := main.cpp component.cpp cpu.cpp cpu.h component.h
 bin_folder := bin
 main_target := main.cpp
 src_folder := src/

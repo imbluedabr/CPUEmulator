@@ -1,4 +1,5 @@
-#include "cpu.cpp"
+#include "component.h"
+#include "cpu.h"
 
 //contains all the logic for the components
 

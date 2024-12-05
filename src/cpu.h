@@ -1,5 +1,6 @@
-
-#include "components.h"
+#pragma once
+#include <iostream>
+#include <memory>
 //Word is the wordsize of the cpu
 using Word = short unsigned int;
 using Byte = unsigned char;
