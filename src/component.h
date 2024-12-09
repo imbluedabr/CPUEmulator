@@ -5,6 +5,7 @@
 #include <memory>
 
 //ew dude what the fuck
+//FIXME: gonna have to change this to ncurses
 #include <conio.h>
 
 template <typename T> class DynamicArray {

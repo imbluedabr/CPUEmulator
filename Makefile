@@ -1,16 +1,17 @@
-
-main_files := main.cpp component.cpp cpu.cpp cpu.h component.h
 bin_folder := bin
-main_target := main.cpp
-src_folder := src/
+src_folder := src
+objects    := component.o cpu.o
 
 all: $(bin_folder) $(bin_folder)/main.exe
 
 $(bin_folder):
 	mkdir -p $(bin_folder)
 
-$(bin_folder)/main.exe: $(addprefix $(src_folder),$(main_files))
-	g++ -o $(bin_folder)/main.exe $(addprefix $(src_folder),$(main_target))
+$(objects): %.o: $(src_folder)/%.cpp
+	g++ -c -o $@ $^
+
+$(bin_folder)/main.exe: $(objects) $(src_folder)/main.cpp
+	g++ -o $(bin_folder)/main.exe $^
 
 clean:
-	rm -rf $(bin_folder)
+	rm -rf $(bin_folder) $(objects)

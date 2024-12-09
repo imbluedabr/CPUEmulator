@@ -243,3 +243,12 @@ template <typename T, typename ADR> void DMAControllerDevice<T, ADR>::update() {
         }
     }
 }
+
+//predefine template classes in this tu, dont forget to add if u use one with a new type
+
+template class RamMemory<Word, Word>;
+template class SerialIODevice<Word>;
+template class DMAControllerDevice<Byte, Word>;
+template class DynamicArray<Word>; //bruh thought it would recursivly figure out that these also need to be compiled but ig g++ is dumb ah
+template class DynamicArray<Byte>;
+

@@ -1,13 +1,14 @@
 #pragma once
 #include <iostream>
 #include <memory>
-//Word is the wordsize of the cpu
-using Word = short unsigned int;
-using Byte = unsigned char;
+#include <cstdint>
 
 //should probally make this an interface using pure virtual functions and then
 //inherit from CPU and overwrite all virtual functions so i can have multiple
 //different cpu's and systems and still make every component compatible
+
+using Word = uint16_t;
+using Byte = uint8_t;
 
 struct IOEntry {
     void (*write)(CPU*, Word);
@@ -121,3 +122,4 @@ class CPU {
     void reset();
     void status();
 };
+
