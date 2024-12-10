@@ -3,12 +3,12 @@
 #include <memory>
 #include <cstdint>
 
+using Word = uint16_t;
+using Byte = uint8_t;
+
 //should probally make this an interface using pure virtual functions and then
 //inherit from CPU and overwrite all virtual functions so i can have multiple
 //different cpu's and systems and still make every component compatible
-
-using Word = uint16_t;
-using Byte = uint8_t;
 
 struct IOEntry {
     void (*write)(CPU*, Word);
@@ -90,11 +90,7 @@ class CPU {
     enum DMA_channels {//dma chanels
         DMA_FLASH
     };
-    enum MMU_registers {//simple test will replace it with actual mmu that uses a GDT and stuff like that
-        MMU_BASEADR,
-        MMU_TOPADR,
-        MMU_VIRT
-    };
+
     //io devices
     SerialIODevice<Word> serialIO;
     FlashDevice flash;
@@ -114,12 +110,13 @@ class CPU {
     void push(Word value, Byte n);//push n amount of bytes to the stack
     void incPC(Word i);
     Word getOp(Byte n);
-    Word read(Word adres, Byte n);
-    void write(Word aders, Word value, Byte n);
+
+    //these are implementation specific
+    virtual Word read(Word adres, Byte n) = 0;
+    virtual void write(Word aders, Word value, Byte n) = 0;
 
     //main functions
-    void execute();
-    void reset();
-    void status();
+    virtual void execute() = 0;
+    virtual void reset() = 0;
+    virtual void status() = 0;
 };
-

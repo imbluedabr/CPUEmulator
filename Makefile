@@ -1,17 +1,17 @@
-bin_folder := bin
-src_folder := src
-objects    := component.o cpu.o
+bin := bin
+src := src
+objects := component.o cpu.o
 
-all: $(bin_folder) $(bin_folder)/main.exe
+all: $(bin) $(bin)/system-i8086.exe
 
-$(bin_folder):
-	mkdir -p $(bin_folder)
+$(bin):
+	mkdir -p $(bin)
 
-$(objects): %.o: $(src_folder)/%.cpp
+$(objects): %.o: $(src)/%.cpp
 	g++ -c -o $@ $^
 
-$(bin_folder)/main.exe: $(objects) $(src_folder)/main.cpp
-	g++ -o $(bin_folder)/main.exe $^
+$(bin)/system-i8086.exe: $(objects) $(src)/system-i8086.cpp
+	g++ -o $@ $^
 
 clean:
-	rm -rf $(bin_folder) $(objects)
+	rm -rf $(bin) $(objects)

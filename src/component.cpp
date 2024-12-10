@@ -93,7 +93,7 @@ template <typename T, typename ADR> void RamMemory<T, ADR>::write(ADR adres, T v
     memcpy(&datapointer[byteSelect], &value, n);//copy the selected bytes into ram
 }
 
-//finely regained some of my sanity after finishing these trash pieces of code
+//i dont like this but im too dumb to make it better
 
 
 //class FlashDevice
