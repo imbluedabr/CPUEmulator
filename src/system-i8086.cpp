@@ -1,33 +1,12 @@
 #include "system-i8086.h"
 
 
-//should contain mmu logic
-Word CPU_8086::read(Word virtAdres, Byte n) {//wraper for read operation
-    if (getBit(FLAG_USERMODE)) {
-        Word adres = this->IOBus[MMU_BASEADR] + virtAdres;
-        if (adres > this->IOBus[MMU_TOPADR]) {
-            interupt(INT_GPF); //cause a segmentation fault
-            return 0;
-        }
-        return this->memory.read(adres, n);
-    }
+Word CPU_8086::read(Word virtAdres, Byte n) {
     return this->memory.read(virtAdres, n);
 }
 
 void CPU_8086::write(Word virtAdres, Word value, Byte n) {//wraper for write operation
-    if (getBit(FLAG_INTERUPT)) {
-        return;
-    }
-    if (getBit(FLAG_USERMODE)) {
-        Word adres = this->IOBus[MMU_BASEADR] + adres;
-        if (adres > this->IOBus[MMU_TOPADR]) {
-            interupt(INT_GPF); //cause a segmentation fault
-            return;
-        }
-        this->memory.write(adres, value, n);
-    } else {
-        this->memory.write(virtAdres, value, n);
-    }
+    this->memory.write(virtAdres, value, n);
 }
 
 //main functions
@@ -36,13 +15,8 @@ void CPU_8086::execute() {
     Byte opcode = (Byte) getOp(1);
     Byte reg;
     Word adres;
-    //instruction set
-    //register select is 1 byte
-    //opcodes are 1 byte
-    //adreses are 2 bytes
-    //inmeadiate values are 1 or 2 bytes, depends on the instruction, if it is a "word" or "byte" instruction
-    //TODO: add MMU and make setreg and mem write functions fail when FLAG_INTERUPT is high
-    std::cout << "opc: " << (Word) opcode << "\n";
+
+    //std::cout << "opc: " << (Word) opcode << "\n";
     switch(opcode) {
         case 0:
             break;
@@ -169,7 +143,6 @@ void CPU_8086::status() {
     for (int i = 0; i < register_count; i++) {
         std::cout << "reg" << i << ": " << this->registers[i] << "\n";
     }
-    std::cout << "FLAG_USERMODE: " << getBit(FLAG_USERMODE) << "\n";
     std::cout << "FLAG_INTERUPT: " << getBit(FLAG_INTERUPT) << "\n";
 }
 
