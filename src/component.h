@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include <memory>
+#include <stdint>
 
 //ew dude what the fuck
 //FIXME: gonna have to change this to ncurses
@@ -18,36 +19,27 @@ template <typename T> class DynamicArray {
     ~DynamicArray();
 };
 
-//forward decleration of class CPU so we can have parent refrences
-class CPU;
 
-class Component {
+class RamMemory {
     public:
-    CPU* parent;
-    Component(CPU* parent);
-};
-
-template <typename T, typename ADR> class RamMemory : public Component {
-    public:
-    DynamicArray<T> ram;
-    static constexpr size_t wordSize = sizeof(T);
+    DynamicArray<uint32_t> ram;
     //constructor
-    RamMemory(CPU* parent, ADR size);
+    RamMemory(CPU* parent, uint32_t size);
     //reset the memory
     void reset();
     //load an array of size "size" and at adres in ram at "adres"
-    void load(T* data, ADR size, ADR adres);
+    void load(uint32_t* data, uint32_t size, uint32_t adres);
     //load a binery file into ram
     void loadBios();
     //dump a certain chunk of ram into the console
     void dump(ADR start, ADR end);
     //read a word from ram
-    T read(ADR adres, unsigned char n);
+    uint32_t read(uint32_t adres, uint8_t n) virtual;
     //write a word to ram
-    void write(ADR adres, T value, unsigned char n);
+    void write(uint32_t adres, uint32_t value, uint8_t n) virtual;
 };
 
-class FlashDevice : public Component {
+class FlashDevice {
     public:
     DynamicArray<unsigned char> flash;
     enum IORegs {
@@ -68,7 +60,7 @@ class FlashDevice : public Component {
     void update();
 };
 
-template<typename T> class SerialIODevice : public Component {
+class SerialIODevice {
     public:
     enum IORegs {
         IO_TX     = 0x1A,
@@ -79,16 +71,17 @@ template<typename T> class SerialIODevice : public Component {
     char TXBuffer[16];
     char RXBuffer[16];
     //callbacks
-    static void TXWrite(CPU* parent, T value);
-    static T RXRead(CPU* parent);
+    //i finna kill my self
+    //static void TXWrite(CPU* parent, T value);
+    //static T RXRead(CPU* parent);
     //constructor
-    SerialIODevice(CPU* parent);
+    SerialIODevice();//my life's biggest bruh moment
 
     //update the SerialIODevice, contains all io logic
     void update();
 };
 
-
+//brah id rather rewrite the entire project in c then continue this torture
 template <typename T, typename ADR> class DMAChannel {
     public:
     DynamicArray<T>* source;

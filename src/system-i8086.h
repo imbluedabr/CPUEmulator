@@ -9,7 +9,7 @@ class CPU_8086 : public CPU {
 
     void execute() override;
     void reset() override;
-	void status() override;
+    void status() override;
 
     CPU_8086();
 };

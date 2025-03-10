@@ -59,27 +59,6 @@ void CPU::clearBit(Byte index) {
     this->registers[REG_SR] &= ~(1 << index);
 }
 
-Word CPU::getReg(Byte reg) {
-    if (reg > REG_USP) { //prevent out of bound read
-        return 0;
-    }
-    if (getBit(FLAG_USERMODE) && reg == REG_SP) {
-        return this->registers[REG_USP];
-    }
-    return this->registers[reg];
-}
-
-void CPU::setReg(Byte reg, Word value) {
-    if (getBit(FLAG_INTERUPT)) {
-        return;
-    }
-    if (getBit(FLAG_USERMODE) && reg > REG_SR) {
-        this->registers[reg+1] = value;
-    } else {
-        this->registers[reg] = value;
-    }
-}
-
 Word CPU::parseFlags(Word value) {
     if (value == 0) {
         //set zero flag
