@@ -5,8 +5,10 @@
 #include <memory>
 #include <stdint>
 
+
+
 //ew dude what the fuck
-//FIXME: gonna have to change this to ncurses
+//TODO: port it to ncurses so i can compile on linux
 #include <conio.h>
 
 template <typename T> class DynamicArray {
@@ -23,8 +25,10 @@ template <typename T> class DynamicArray {
 class RamMemory {
     public:
     DynamicArray<uint32_t> ram;
+    uint32_t biosBaseAdres;
+
     //constructor
-    RamMemory(CPU* parent, uint32_t size);
+    RamMemory(uint32_t size);
     //reset the memory
     void reset();
     //load an array of size "size" and at adres in ram at "adres"
@@ -32,16 +36,43 @@ class RamMemory {
     //load a binery file into ram
     void loadBios();
     //dump a certain chunk of ram into the console
-    void dump(ADR start, ADR end);
+    void dump(uint32_t start, uint32_t end);
     //read a word from ram
     uint32_t read(uint32_t adres, uint8_t n) virtual;
     //write a word to ram
     void write(uint32_t adres, uint32_t value, uint8_t n) virtual;
 };
 
-class FlashDevice {
+
+//brah id rather rewrite the entire project in c then continue this torture
+struct DMAChannel {
+    DynamicArray<uint8_t>* source;
+    uint32_t size; //the amount of words to transfer
+    uint32_t sourceAdres; //the adres in the hardware buffer to read / write to
+    uint32_t destAdres; //the adres in ram
+    bool RW; //if the dma operation is to read or write to ram
+    uint8_t irqVec;
+    DMAChannel();
+};
+
+class DMAControllerDevice : virtual public Memory {
     public:
-    DynamicArray<unsigned char> flash;
+    static constexpr size_t channels = 16;
+    //the dma channels
+    DMAChannel DMAChannelArray[channels];
+    //constructor
+    DMAControllerDevice();
+    //dma read request
+    bool DMAOperation(int channel, bool RW, DynamicArray<uint8_t>* dest, uint32_t size, uint32_t destAdres, uint32_t sourceAdres, uint8_t irqVec);
+    //updates the dma transfer, contains all dma transfer logic
+    void update();
+};
+
+
+
+class FlashDevice : virtual public DMAControllerDevice {
+    public:
+    DynamicArray<uint8_t> flash;
     enum IORegs {
         IO_DISKADR = 0x0A, //sector adres on the disk
         IO_RAMADR  = 0x0B, //adres in ram
@@ -49,16 +80,17 @@ class FlashDevice {
         IO_CR      = 0x0D  //control register bit0 = read / write, bit1 = request dma
     };
     //constructor
-    FlashDevice(CPU* parent, unsigned int size);
+    FlashDevice(uint32_t size);
     //load the Flash.bin file into the flash
     void loadFlash();
     //store the flash into Flash.bin
     void storeFlash();
     //dump a portion of the flash into the console
-    void dump(unsigned int start, unsigned int end);
+    void dump(uint32_t start, uint32_t end);
     //update the FlashDevice, contains all the io and dma logic
     void update();
 };
+
 
 class SerialIODevice {
     public:
@@ -81,27 +113,5 @@ class SerialIODevice {
     void update();
 };
 
-//brah id rather rewrite the entire project in c then continue this torture
-template <typename T, typename ADR> class DMAChannel {
-    public:
-    DynamicArray<T>* source;
-    ADR size; //the amount of words to transfer
-    unsigned int sourceAdres; //the adres in the hardware buffer to read / write to
-    ADR destAdres; //the adres in ram
-    bool RW; //if the dma operation is to read or write to ram
-    unsigned char irqVec;
-    DMAChannel();
-};
 
-template <typename T, typename ADR> class DMAControllerDevice : public Component {
-    public:
-    static constexpr size_t channels = 16;
-    //the dma channels
-    DMAChannel<T, ADR> DMAChannelArray[channels];
-    //constructor
-    DMAControllerDevice(CPU* parent);
-    //dma read request
-    bool DMAOperation(int channel, bool RW, DynamicArray<T>* dest, ADR size, unsigned int destAdres, ADR sourceAdres, unsigned char irqVec);
-    //updates the dma transfer, contains all dma transfer logic
-    void update();
-};
+

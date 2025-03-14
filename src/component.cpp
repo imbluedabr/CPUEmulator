@@ -27,33 +27,31 @@ template <typename T> DynamicArray<T>::~DynamicArray() {
     this->size = 0;
 }
 
-//might extend this in the future when i want to use polymorhpism for more flexibility
-Component::Component(CPU* parent) { this->parent = parent; }
-
 //RamMemory
 
-template <typename T, typename ADR> RamMemory<T, ADR>::RamMemory(CPU* parent, ADR size) :
-							ram(size),
-							Component(parent)
+//constructor
+RamMemory::RamMemory(uint32_t size) : ram(size)
 {
-
+    //bios base adres
+    this->biosBaseAdres = 0x00FF;
 }
 
-template <typename T, typename ADR> void RamMemory<T, ADR>::reset() {
-    for (ADR i = 0; i < this->ram.size; i++) {
+void RamMemory::reset() {
+    for (uint32_t i = 0; i < this->ram.size; i++) {
         this->ram[i] = 0;
     }
 }
 
-template <typename T, typename ADR> void RamMemory<T, ADR>::load(T* data, ADR size, ADR adres) {
-    for (ADR i = 0; i < size; i++) {
+void RamMemory::load(uint32_t* data, uint32_t size, uint32_t adres) {
+    for (uint32_t i = 0; i < size; i++) {
         this->ram[adres+i] = data[i];
     }
 }
 
-template <typename T, typename ADR> void RamMemory<T, ADR>::loadBios() {
-    constexpr size_t buffersize = wordSize/512;
-    T bios[buffersize];//buffer for the bios
+void RamMemory::loadBios() {
+    //the bios is a fixed 512 bytes so the buffer size is sizeof(word)/512
+    constexpr size_t biosSize = 512/sizeof(uint32_t);
+    uint32_t bios[biosSize];//buffer for the bios
     std::ifstream input("Bios.bin", std::ios::binary);
     if (!input) {//check if the file is opened
         std::cerr << "Error: Could not open \"Bios.bin\"\n";
@@ -61,21 +59,21 @@ template <typename T, typename ADR> void RamMemory<T, ADR>::loadBios() {
     }
     input.unsetf(std::ios::skipws);//read 512 bytes into the ram memory
     input.read(reinterpret_cast<char*>(bios), 512);//idk what  this stuff means lol
-    load(bios, buffersize, 0x00FF);//load the bios into ram at adres 0x00FF where the reset vector points
+    load(bios, buffersize, this->biosBaseAdres);//load the bios into ram at adres 0x00FF where the reset vector points
 }
 
-template <typename T, typename ADR> void RamMemory<T, ADR>::dump(ADR start, ADR end) {
-    for (ADR i = start; i < end; i++) {
+void RamMemory::dump(uint32_t start, uint32_t end) {
+    for (; start < end; i++) {
         std::cout << std::hex << this->ram[i] << ", ";
     }
 }
 
 //read bytes from ram
-template <typename T, typename ADR> T RamMemory<T, ADR>::read(ADR adres, unsigned char n) {
-    char byteSelect = adres & 0b1;
-    T justenditalready = 0;//very bad code since we first copy data into this var and then we make another copy since we return it
-    unsigned char* datapointer = (unsigned char*) &this->ram[adres >> 1];//add the pointer to the cacheline to the byteselect to calculate the final adres
-    if (&datapointer[byteSelect] + n > (unsigned char*)this->ram.lastElement) {
+uint32_t RamMemory::read(uint32_t adres, uint8_t n) {
+    uint8_t byteSelect = adres & 0b1;
+    uint32_t justenditalready = 0;//very bad code since we first copy data into this var and then we make another copy since we return it
+    uint8_t* datapointer = (uint8_t*) &this->ram[adres >> 1];//add the pointer to the cacheline to the byteselect to calculate the final adres
+    if (&datapointer[byteSelect] + n > (uint8_t*)this->ram.lastElement) {
         return justenditalready; //if the last byte that we read is above the last element we got to return
     }
     //i dont like this but it will have to do
@@ -83,11 +81,12 @@ template <typename T, typename ADR> T RamMemory<T, ADR>::read(ADR adres, unsigne
     return justenditalready;
 }
 
-template <typename T, typename ADR> void RamMemory<T, ADR>::write(ADR adres, T value, unsigned char n) {
+//TODO: rewrite these functions for better performance
+void RamMemory::write(uint32_t adres, uint32_t value, uint8_t n) {
     //i dont like this but it will have to do
-    char byteSelect = adres & 0b1; //get the value of the first bit
-    unsigned char* datapointer = (unsigned char*) &this->ram[adres >> 1];
-    if (&datapointer[byteSelect] + n > (unsigned char*)this->ram.lastElement) {
+    uint8_t byteSelect = adres & 0b1; //get the value of the first bit
+    uint8_t* datapointer = (uint8_t*) &this->ram[adres >> 1];
+    if (&datapointer[byteSelect] + n > (uint8_t*)this->ram.lastElement) {
         return;
     }
     memcpy(&datapointer[byteSelect], &value, n);//copy the selected bytes into ram
@@ -97,8 +96,7 @@ template <typename T, typename ADR> void RamMemory<T, ADR>::write(ADR adres, T v
 
 
 //class FlashDevice
-FlashDevice::FlashDevice(CPU* parent, unsigned int size) : flash(size),
-                                                           Component(parent)
+FlashDevice::FlashDevice(uint32_t size) : flash(size), DMAControllerDevice()
 {
     loadFlash();
 }
@@ -125,12 +123,13 @@ void FlashDevice::storeFlash() {
     file.write((char*)this->flash.array, this->flash.size);
 }
 
-void FlashDevice::dump(unsigned int start, unsigned int end) {
-    for (int i = start; i < end; i++) {
+void FlashDevice::dump(uint32_t start, uint32_t end) {
+    for (uint32_t i = start; i < end; i++) {
         std::cout << std::hex << this->flash[i] << ", ";
     }
 }
 
+//TODO: add io functionality
 //this will request dma when the right io registers get the right values
 void FlashDevice::update() {
     if ((parent->IOBus[IO_CR] & 0x2) == 0x2) {//check if the dma request bit is set in the control register
@@ -151,7 +150,7 @@ void FlashDevice::update() {
 
 
 //class SerialIODevice
-template <typename T> SerialIODevice<T>::SerialIODevice(CPU* parent) : Component(parent) {
+SerialIODevice::SerialIODevice() {
     parent->IOBus.atachDev(IO_RX, NULL, &SerialIODevice<T>::RXRead);
     parent->IOBus.atachDev(IO_TX, &SerialIODevice<T>::TXWrite, NULL);
 }
@@ -192,7 +191,7 @@ template <typename T> void SerialIODevice<T>::update() {
 
 //now the dma stuff
 //class DMAChannel
-template <typename T, typename ADR> DMAChannel<T, ADR>::DMAChannel() {
+DMAChannel::DMAChannel() {
     this->source = NULL;
     this->size = 0;
     this->sourceAdres = 0;
@@ -201,13 +200,13 @@ template <typename T, typename ADR> DMAChannel<T, ADR>::DMAChannel() {
 }
 
 //class DMAControllerDevice
-template <typename T, typename ADR> DMAControllerDevice<T, ADR>::DMAControllerDevice(CPU* parent) : Component(parent) {
+DMAControllerDevice::DMAControllerDevice() : Memory(0) {
     
 }
 
 //request DMA
-template <typename T, typename ADR> bool DMAControllerDevice<T, ADR>::DMAOperation(int channel, bool RW, DynamicArray<T>* dest, ADR size, unsigned int destAdres, ADR sourceAdres, unsigned char irqVec) {
-    DMAChannel<T, ADR>* currentChannel = &DMAChannelArray[channel];
+bool DMAControllerDevice::DMAOperation(int channel, bool RW, DynamicArray<uint8_t>* dest, uint32_t size, uint32_t destAdres, uint32_t sourceAdres, uint8_t irqVec) {
+    DMAChannel* currentChannel = &DMAChannelArray[channel];
     if (currentChannel->size == 0) {
         currentChannel->source = dest;
         currentChannel->size = size;
@@ -222,33 +221,26 @@ template <typename T, typename ADR> bool DMAControllerDevice<T, ADR>::DMAOperati
 }
 
 //handles the DMA requests
-template <typename T, typename ADR> void DMAControllerDevice<T, ADR>::update() {
+void DMAControllerDevice::update() {
     for (int channel = 0; channel < channels; channel++) {//this fr makes my brain hurt
-        DMAChannel<T, ADR>* currentChannel = &DMAChannelArray[channel];
+        DMAChannel* currentChannel = &DMAChannelArray[channel];
         if (currentChannel->size > 0) {
             if (currentChannel->RW) {//write
-                parent->memory.write(currentChannel->destAdres, (*currentChannel->source)[currentChannel->sourceAdres], sizeof(T));
-                currentChannel->sourceAdres++; //this needs to be changed so that it depends on the size of T
+                this->write(currentChannel->destAdres, (*currentChannel->source)[currentChannel->sourceAdres], sizeof(uint8_t));
+                currentChannel->sourceAdres++; //increment and decrement all the pointers
                 currentChannel->destAdres++;
                 currentChannel->size--;
             } else {//read
-                (*currentChannel->source)[currentChannel->sourceAdres] = parent->memory.read(currentChannel->destAdres, sizeof(T));
-                currentChannel->sourceAdres++;//this also needs to be changed
+                (*currentChannel->source)[currentChannel->sourceAdres] = parent->memory.read(currentChannel->destAdres, sizeof(uint8_t));
+                currentChannel->sourceAdres++;//increment stuff
                 currentChannel->destAdres++;
                 currentChannel->size--;
             }
             if (currentChannel->size == 0) {//dma finished now we should trigger a hardware interupt
-                parent->interupt(currentChannel->irqVec);
+                parent->interupt(currentChannel->irqVec);//FIXME: use HardwareStack component
             }
         }
     }
 }
 
-//predefine template classes in this tu, dont forget to add if u use one with a new type
-
-template class RamMemory<Word, Word>;
-template class SerialIODevice<Word>;
-template class DMAControllerDevice<Byte, Word>;
-template class DynamicArray<Word>; //bruh thought it would recursivly figure out that these also need to be compiled but ig g++ is dumb ah
-template class DynamicArray<Byte>;
 
