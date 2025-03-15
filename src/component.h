@@ -22,13 +22,13 @@ template <typename T> class DynamicArray {
 };
 
 
-class RamMemory {
+class Memory {
     public:
     DynamicArray<uint32_t> ram;
     uint32_t biosBaseAdres;
 
     //constructor
-    RamMemory(uint32_t size);
+    Memory(uint32_t size);
     //reset the memory
     void reset();
     //load an array of size "size" and at adres in ram at "adres"

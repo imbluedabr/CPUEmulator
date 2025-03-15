@@ -231,7 +231,7 @@ void DMAControllerDevice::update() {
                 currentChannel->destAdres++;
                 currentChannel->size--;
             } else {//read
-                (*currentChannel->source)[currentChannel->sourceAdres] = parent->memory.read(currentChannel->destAdres, sizeof(uint8_t));
+                (*currentChannel->source)[currentChannel->sourceAdres] = this->read(currentChannel->destAdres, sizeof(uint8_t));
                 currentChannel->sourceAdres++;//increment stuff
                 currentChannel->destAdres++;
                 currentChannel->size--;
