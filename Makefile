@@ -1,20 +1,25 @@
 bin := bin
 src := src
-objects := component.o cpu.o
+opt := O2
 
-all: $(bin) $(bin)/system-i8086.exe $(bin)/system-x16.exe
+all: $(bin) $(bin)/system-test.exe
+
+
 
 $(bin):
 	mkdir -p $(bin)
 
-$(objects): %.o: $(src)/%.cpp
-	g++ -c -o $@ $^
+component.o: $(src)/component.cpp
+	g++ -$(opt) -c -o $@ $^
 
-$(bin)/system-i8086.exe: $(objects) $(src)/system-i8086.cpp
-	g++ -o $@ $^
+$(bin)/system-i8086.exe: component.o $(src)/system-i8086.cpp
+	g++ -$(opt) -o $@ $^
 
-$(bin)/system-x16.exe: $(objects) $(src)/system-x16.cpp
-	g++ -o $@ $^
+$(bin)/system-x16.exe: component.o $(src)/system-x16.cpp
+	g++ -$(opt) -o $@ $^
+
+$(bin)/system-test.exe: component.o $(src)/system-test.cpp
+	g++ -$(opt) -o $@ $^
 
 clean:
-	rm -rf $(bin) $(objects)
+	rm -rf $(bin) component.o
