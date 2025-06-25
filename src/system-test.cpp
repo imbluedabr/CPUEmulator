@@ -77,6 +77,7 @@ void SystemTest::reset() {
     this->reg.A = 0;
     this->reg.DP = 0;
     this->reg.SP = 0;
+    this->reg.BP = 0;
     this->reg.PC = 0;
     this->clock.running = true;
 }
@@ -401,7 +402,7 @@ int main(int argc, char** argv) {
     SystemTest sys;
 
     //sys.ram.load((uint32_t*) &program, sizeof(program)/(sizeof(uint32_t)), 0);
-    sys.ram.loadFile("../ScrapOS/UIO_driver.bin", 1024/sizeof(uint32_t), 0);
+    sys.ram.loadFile("../ScrapOs/test.bin", 1024/sizeof(uint32_t), 0);
     
     const char* arg = "debug";
 
