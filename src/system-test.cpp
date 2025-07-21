@@ -124,6 +124,7 @@ void SystemTest::step() {
             break;
         case 10:
             this->reg.DP = this->ram.read(((this->reg.BP + value) & SystemTest::to11bit)*2, 2) & SystemTest::to11bit;
+            break;
         case 11:
             this->reg.DP = this->ram.read(((this->reg.SP + value) & SystemTest::to11bit)*2, 2) & SystemTest::to11bit;
             break;
@@ -346,7 +347,7 @@ void SystemTest::run() {
 
     // Calculate the duration
     auto duration = duration_cast<nanoseconds>(end - start);
-    std::cout << "Time for n iterations: " << duration.count() << " ns\n";
+    std::cout << "Time for " << loopcount << " iterations: " << duration.count() << " ns\n";
     std::cout << "Average per iteration: " << duration.count() / loopcount << " ns\n";
 }
 
@@ -402,7 +403,7 @@ int main(int argc, char** argv) {
     SystemTest sys;
 
     //sys.ram.load((uint32_t*) &program, sizeof(program)/(sizeof(uint32_t)), 0);
-    sys.ram.loadFile("../ScrapOs/test.bin", 1024/sizeof(uint32_t), 0);
+    sys.ram.loadFile("../ScrapOs/kernel.bin", 2048/sizeof(uint32_t), 0);
     
     const char* arg = "debug";
 
