@@ -2,11 +2,12 @@
 
 very simple and basic emulator from scratch.
 
-will eventually emulate an i8086, IA-32 (i80386) and maybe also my own 16 bit architecture im developing on an fpga.
+Currently emulates my own architecture called micro16, might add an i8086 later or even something with an mmu like the i80286 or 386.
 
-### Why?
+## Why?
 
-so i can start working on my own unix like posix compliant kernel in assembly (and maybe some c).
+started this to test the memory efficiency and programing complexity of my homebrew architectures but now i am using it for development of homebrew operating systems.
 
 ## Status
-currently still experimenting with different code structures(just started programing in c++) so not going to have any real progress anytime soon.
+
+Halted further development since i am focusing on os development and wont make any changes to my architecture soon.
