@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <string.h>
 #include <memory>
 #include <cstdint>
 
@@ -9,7 +10,16 @@
 
 //ew dude what the fuck
 //TODO: port it to ncurses so i can compile on linux
+
+#ifdef __linux__
+#include <fcntl.h>
+#include <unistd.h>
+#include <termios.h>
+#else
+//assume windows
 #include <conio.h>
+
+#endif
 
 template <typename T> class DynamicArray {
 
@@ -223,6 +233,7 @@ class SerialIODevice : public IODevice {
         //i finna kill my self
         //constructor
         SerialIODevice();
+        ~SerialIODevice();
 
         //update the SerialIODevice, contains all io logic
         void update();

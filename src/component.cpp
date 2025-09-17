@@ -276,6 +276,16 @@ void BasicStorageDevice::update() {
 
 //class SerialIODevice
 SerialIODevice::SerialIODevice() : Registers() {
+
+#ifdef __linux__
+    struct termios buff;
+    tcgetattr(1, &buff);
+
+    buff.c_lflag &= ICANON;
+
+    tcsetattr(1, TCSANOW, &buff);
+#endif
+
     this->TXSize = 0;
     this->RXSize = 0;
 }
@@ -306,9 +316,27 @@ void SerialIODevice::update() {
     if ((this->TXSize > 0) && ((this->Registers[IO_CTRL] & 0x1) == 0x1)) {
         std::cout << this->TXBuffer[--this->TXSize];
     }
+
+#ifdef __linux__
+    char c;
+    if ((::read(1, &c, 1) == 1) && (this->RXSize < 16) && (this->Registers[IO_CTRL] & 0x4)) {
+        this->RXBuffer[this->RXSize++] = c;
+    }
+#else
     if (kbhit() && (this->RXSize < 16) && ((this->Registers[IO_CTRL] & 0x4) == 0x4)) {
         this->RXBuffer[this->RXSize++] = getch();
     }
+#endif
+}
+
+SerialIODevice::~SerialIODevice() {
+#ifdef __linux__
+    struct termios buff;
+    tcgetattr(1, &buff);
+    buff.c_lflag |= ICANON;
+    buff.c_lflag |= ECHO;
+    tcsetattr(1, TCSANOW, &buff);
+#endif
 }
 
 
